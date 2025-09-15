@@ -18,6 +18,7 @@ contract OnscriptUserManagement is Ownable, ReentrancyGuard {
     //// TYPES
     //////////////////////////////////////////////////////////////////////////////
     struct UserRecord {
+        uint256 id;
         uint256 fid;
         bool isPremium;
         bool isRegistered;
@@ -28,6 +29,7 @@ contract OnscriptUserManagement is Ownable, ReentrancyGuard {
     //////////////////////////////////////////////////////////////////////////////
     AggregatorV3Interface internal s_dataFeed;
     mapping(address => UserRecord) private s_addressToUserRecord;
+    uint256 private s_ID;
 
     // Premium price stored as **base USD integer** (e.g., 1 = $1, 10 = $10).
     // The contract will scale this by the Chainlink feed decimals at runtime.
@@ -129,13 +131,16 @@ contract OnscriptUserManagement is Ownable, ReentrancyGuard {
      * @dev Reverts if already registered.
      * @param fid The user's fid (must be >= 1).
      */
-    function registerUser(uint256 fid) external validFid(fid) {
+    function registerUser(uint256 fid) public validFid(fid) {
         UserRecord storage user = s_addressToUserRecord[msg.sender];
         if (user.isRegistered) {
             revert OnscriptUserManagement__UserAlreadyExists(msg.sender);
         }
         user.isRegistered = true;
         user.fid = fid;
+        user.id = s_ID;
+
+        s_ID++;
         emit UserRegistered(msg.sender, fid);
     }
 
@@ -143,7 +148,7 @@ contract OnscriptUserManagement is Ownable, ReentrancyGuard {
      * @notice Update the caller's fid.
      * @param fid New fid (must be >= 1).
      */
-    function updateUser(uint256 fid) external onlyRegisteredUser validFid(fid) {
+    function updateUser(uint256 fid) public onlyRegisteredUser validFid(fid) {
         s_addressToUserRecord[msg.sender].fid = fid;
         emit UserDetailsUpdated(msg.sender, fid);
     }
@@ -152,7 +157,7 @@ contract OnscriptUserManagement is Ownable, ReentrancyGuard {
      * @notice Delete the caller's user record.
      * @dev Clears the UserRecord from storage.
      */
-    function deleteUser() external onlyRegisteredUser {
+    function deleteUser() public onlyRegisteredUser {
         uint256 userFid = s_addressToUserRecord[msg.sender].fid;
         delete s_addressToUserRecord[msg.sender];
         emit UserDeleted(msg.sender, userFid);
@@ -164,7 +169,7 @@ contract OnscriptUserManagement is Ownable, ReentrancyGuard {
      *      Refunds any excess ETH back to the payer via a direct `call`. If that refund fails the tx will revert.
      *      This function is protected by `nonReentrant`.
      */
-    function payForPremium() external payable onlyRegisteredUser nonReentrant {
+    function payForPremium() public payable onlyRegisteredUser nonReentrant {
         // Get latest feed data
         (uint80 roundId, int256 answer,, uint256 updatedAt, uint80 answeredInRound) = s_dataFeed.latestRoundData();
 
@@ -192,6 +197,11 @@ contract OnscriptUserManagement is Ownable, ReentrancyGuard {
         }
 
         emit PremiumPaid(msg.sender, user.fid, requiredWei);
+    }
+
+    function registerAndGoPremium(uint256 fid) public payable nonReentrant {
+        registerUser(fid);
+        payForPremium();
     }
 
     //////////////////////////////////////////////////////////////////////////////
@@ -254,9 +264,30 @@ contract OnscriptUserManagement is Ownable, ReentrancyGuard {
         emit FundsWithdrawn(owner(), bal);
     }
 
+    function makeUserPremium(address userAddress) external onlyOwnerOrAdmin {
+        if (!s_addressToUserRecord[userAddress].isRegistered) {
+            revert OnscriptUserManagement__UserDoesNotExists(userAddress);
+        }
+
+        if (s_addressToUserRecord[userAddress].isPremium) {
+            revert OnscriptUserManagement__AlreadyPremium();
+        }
+
+        UserRecord storage user = s_addressToUserRecord[userAddress];
+        user.isPremium = true;
+        emit PremiumPaid(userAddress, user.fid, 0);
+    }
+
     //////////////////////////////////////////////////////////////////////////////
     //// GETTERS
     //////////////////////////////////////////////////////////////////////////////
+    /**
+     * @notice Returns whether `userAddress` is registered.
+     * @param userAddress Address to query.
+     */
+    function getIsUserRegistered(address userAddress) external view returns (bool) {
+        return s_addressToUserRecord[userAddress].isRegistered;
+    }
 
     /**
      * @notice Returns the fid of `userAddress`.
@@ -331,6 +362,10 @@ contract OnscriptUserManagement is Ownable, ReentrancyGuard {
      */
     function _ceilDiv(uint256 a, uint256 b) internal pure returns (uint256) {
         return a == 0 ? 0 : 1 + (a - 1) / b;
+    }
+
+    function getId() external view returns (uint256) {
+        return s_ID;
     }
 
     //////////////////////////////////////////////////////////////////////////////
