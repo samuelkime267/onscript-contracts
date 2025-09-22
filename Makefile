@@ -7,7 +7,8 @@ DEFAULT_ANVIL_KEY     := 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784
 DEFAULT_ANVIL_KEY_2   := 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d
 DEFAULT_ANVIL_ADDRESS := 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 DEFAULT_ANVIL_ADDRESS_2 := 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
-
+# make deploy NETWORK=base-sepolia
+# make deploy NETWORK=mainnet
 # Default to local node unless ARGS specifies a network
 ifeq ($(NETWORK),mainnet)
     NETWORK_ARGS := --rpc-url $(BASE_RPC_URL) --private-key $(PRIVATE_KEY) --broadcast --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv

@@ -15,6 +15,7 @@ contract OnscriptManagementTest is Test {
     address public ethUsdPriceFeed;
     uint256 public deployerKey;
     uint256 public premiumUsdBase;
+    uint256 public plusPriceUsdBase;
     MockV3Aggregator mockFeed;
     address public OWNER;
     uint256 public constant MAX_STALE_TIME = 3 hours;
@@ -33,7 +34,7 @@ contract OnscriptManagementTest is Test {
         DeployOnScriptUserManagement deployer = new DeployOnScriptUserManagement();
         (onscriptUserManagement, helperConfig) = deployer.run();
 
-        (ethUsdPriceFeed, deployerKey, premiumUsdBase, OWNER) = helperConfig.activeNetworkConfig();
+        (ethUsdPriceFeed, deployerKey, premiumUsdBase, OWNER, plusPriceUsdBase) = helperConfig.activeNetworkConfig();
         mockFeed = MockV3Aggregator(ethUsdPriceFeed);
         // Funding dummy users
         for (uint256 i = 0; i < users.length; i++) {
@@ -211,12 +212,18 @@ contract OnscriptManagementTest is Test {
     }
 
     function testAdminCanBeAddedSuccessfully() public {
+        vm.prank(USER);
+        onscriptUserManagement.registerUser(USER_FID);
+
         vm.prank(OWNER);
         onscriptUserManagement.grantAdmin(USER);
         assert(onscriptUserManagement.getIsUserAdmin(USER));
     }
 
     function testAdminCanBeRemovedSuccessfully() public {
+        vm.prank(USER);
+        onscriptUserManagement.registerUser(USER_FID);
+
         vm.prank(OWNER);
         onscriptUserManagement.grantAdmin(USER);
         vm.prank(OWNER);
@@ -237,6 +244,9 @@ contract OnscriptManagementTest is Test {
     }
 
     function testAdminCanSetPremiumAmount() public {
+        vm.prank(USER);
+        onscriptUserManagement.registerUser(USER_FID);
+
         vm.prank(OWNER);
         onscriptUserManagement.grantAdmin(USER);
         vm.prank(USER);
@@ -251,6 +261,9 @@ contract OnscriptManagementTest is Test {
     }
 
     function testSetPremiumFailsIfAmountIsZeroForAdmin() public {
+        vm.prank(USER);
+        onscriptUserManagement.registerUser(USER_FID);
+
         vm.prank(OWNER);
         onscriptUserManagement.grantAdmin(USER);
         vm.prank(USER);
@@ -313,17 +326,17 @@ contract OnscriptManagementTest is Test {
 
     function testConstructorRevertsWhenOwnerIsZero() public {
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableInvalidOwner.selector, address(0)));
-        new OnscriptUserManagement(address(0), premiumUsdBase, ethUsdPriceFeed);
+        new OnscriptUserManagement(address(0), premiumUsdBase, ethUsdPriceFeed, plusPriceUsdBase);
     }
 
     function testConstructorRevertsWhenPriceFeedIsZero() public {
         vm.expectRevert(OnscriptUserManagement.OnscriptUserManagement__InvalidAddress.selector);
-        new OnscriptUserManagement(OWNER, premiumUsdBase, address(0));
+        new OnscriptUserManagement(OWNER, premiumUsdBase, address(0), plusPriceUsdBase);
     }
 
     function testConstructorRevertsWhenPremiumUsdBaseIsZero() public {
         vm.expectRevert(OnscriptUserManagement.OnscriptUserManagement__InvalidPrice.selector);
-        new OnscriptUserManagement(OWNER, 0, ethUsdPriceFeed);
+        new OnscriptUserManagement(OWNER, 0, ethUsdPriceFeed, plusPriceUsdBase);
     }
 
     function testRevertsWhenAnswerNonPositive() public {
@@ -412,6 +425,9 @@ contract OnscriptManagementTest is Test {
     }
 
     function testRevertsIfAddressIsAlreadyAnAdmin() public {
+        vm.prank(USER);
+        onscriptUserManagement.registerUser(USER_FID);
+
         vm.prank(OWNER);
         onscriptUserManagement.grantAdmin(USER);
         vm.prank(OWNER);

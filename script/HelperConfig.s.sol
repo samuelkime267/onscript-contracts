@@ -10,12 +10,14 @@ contract HelperConfig is Script {
     uint8 public constant DECIMALS = 8;
     int256 public constant ETH_USD_PRICE = 4923e8;
     uint256 public constant DEFAULT_PREMIUM_USD_BASE = 1;
+    uint256 public constant DEFAULT_PLUS_PRICE_USD_BASE = 10;
 
     struct NetworkConfig {
         address ethUsdPriceFeed;
         uint256 deployerKey;
         uint256 premiumUsdBase;
         address deployerAddress;
+        uint256 plusPriceUsdBase;
     }
 
     uint256 public DEFAULT_ANVIL_PRIVATE_KEY = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
@@ -38,7 +40,8 @@ contract HelperConfig is Script {
             ethUsdPriceFeed: 0x4aDC67696bA383F43DD60A9e78F2C97Fbbfc7cb1,
             deployerKey: deployerKey,
             premiumUsdBase: DEFAULT_PREMIUM_USD_BASE,
-            deployerAddress: deployerAddress
+            deployerAddress: deployerAddress,
+            plusPriceUsdBase: DEFAULT_PLUS_PRICE_USD_BASE
         });
     }
 
@@ -49,7 +52,8 @@ contract HelperConfig is Script {
             ethUsdPriceFeed: 0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70,
             deployerKey: deployerKey,
             premiumUsdBase: DEFAULT_PREMIUM_USD_BASE,
-            deployerAddress: deployerAddress
+            deployerAddress: deployerAddress,
+            plusPriceUsdBase: DEFAULT_PLUS_PRICE_USD_BASE
         });
     }
 
@@ -68,7 +72,8 @@ contract HelperConfig is Script {
             ethUsdPriceFeed: address(ethUsdPriceFeed), // ETH/USD mock for Anvil
             deployerKey: DEFAULT_ANVIL_PRIVATE_KEY,
             premiumUsdBase: DEFAULT_PREMIUM_USD_BASE,
-            deployerAddress: deployerAddress
+            deployerAddress: deployerAddress,
+            plusPriceUsdBase: DEFAULT_PLUS_PRICE_USD_BASE
         });
     }
 }

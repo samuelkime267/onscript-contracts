@@ -8,12 +8,17 @@ import {HelperConfig} from "./HelperConfig.s.sol";
 contract DeployOnScriptUserManagement is Script {
     function run() external returns (OnscriptUserManagement, HelperConfig) {
         HelperConfig helperConfig = new HelperConfig();
-        (address ethUsdPriceFeed, uint256 deployerKey, uint256 premiumUsdBase, address deployerAddress) =
-            helperConfig.activeNetworkConfig();
+        (
+            address ethUsdPriceFeed,
+            uint256 deployerKey,
+            uint256 premiumUsdBase,
+            address deployerAddress,
+            uint256 plusPriceUsdBase
+        ) = helperConfig.activeNetworkConfig();
 
         vm.startBroadcast(deployerKey);
         OnscriptUserManagement onscriptUserManagement =
-            new OnscriptUserManagement(deployerAddress, premiumUsdBase, ethUsdPriceFeed);
+            new OnscriptUserManagement(deployerAddress, premiumUsdBase, ethUsdPriceFeed, plusPriceUsdBase);
         vm.stopBroadcast();
 
         return (onscriptUserManagement, helperConfig);
